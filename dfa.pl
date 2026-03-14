@@ -54,7 +54,8 @@ execPositiveTests() :-
     parseDFA([1,1,2,2]),
     parseDFA([0,0,1,2,0,1,2,2]),
     parseDFA([1,1,1,1,1,1,1,2,2]),
-    parseDFA([0,1,2,0,1,2,0,1,1,1,1]).
+    parseDFA([0,1,2,0,1,2,0,1,1,1,1]),
+    parseDFA([1,1,2,1,2,2]).
 
 execNegativeTests() :-
     parseDFA([2,1,1]),
