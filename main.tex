@@ -1,30 +1,68 @@
 \documentclass{article}
 \usepackage{tikz}
 \usetikzlibrary{shapes.geometric,positioning}
+\usepackage{cleveref}
 
 \begin{document}
-\section{Prolog}
+\section{Introduction} \label{sec:intro}
+This evidence looks at finding an automaton to accept a provided language. 
+The resulting automaton can than be either modeled using Prolog or REGEX.
+The language chosen for this evidence posesses the alphabet $\Sigma = \{0, 1, 2\}$, needs to end in either "111" or "122" to 
+transition into an accepting state and prohibits the occurence of "211".
+\section{Automaton} 
+As \cite{hopcroft2001introduction} mention, (deterministic) finite automaton are useful models for different tasks, including lexical analysis.
+When interpreting finite automatons as transition graphs, this can be easily visulaized.
+A string can be broken down into each letter, which can be used to follow a graph into a specific node/ state.
+In \cite{hopcroft2001introduction} a deterministic finite automaton is defined as a
+quintuple $A= (Q, \Sigma, \delta, q0, F)$ where
+\begin{itemize}
+    \item Q defines a finite set of states,
+    \item $\Sigma$ a finite alphabet,
+    \item $\delta$ a transition function,
+    \item q0 the inital state and
+    \item F the accepting states.
+\end{itemize}
+An input gets accepted if, after passing the string, it ends up in an accepting
+state, otherwise it is rejected. The alphabet $\Sigma$ is the same as mentioned in \cref{sec:intro} and
+the other elements are yet to be determined.
+
+While \cite{hopcroft2001introduction} also mention the existence of non-deterministic finite automaton,
+due to the small size and lower complexity of the language, a deterministic model approach was chosen.
+As \cite{hopcroft2001introduction} explain, a non-deterministic model has to be converted to a deterministic model,
+in order to be implementable. As using a deterministic model was possible, this option was more reasonable.
+
+Each string should start out at the same entry state E. From there one can derive the different conitions path, the automaton needs to recognize.
+In \cref{fig:base_model} the different paths are depicted. The path s1e-s1f shows the accepted ending sequence "111", 
+s1e-s2f models the accepting end string "122" and s3e-s3f show the rejected sequence "211". These are also all the required 
+states, as any other sequence has no influence on acceptance or reejction and can lead back to E. With this F is defined as $F=\{s1f, s2f\}$.
+In \cref{fig:full_model}, the full model is shown with all connections. Important to note is, that each node needs
+to model each possible alphabet transition. Interesting observations include, that each 0
+loops back to node E as 0 is no part of any important sequence, that once s3f is reached, all further transitions loop back to itself. 
+Once this node has been reached, the string cannot be accepted. Further interesting to observer are the
+transitions between different branches, as each subsequence in a branch can potentially be the starting point of a different sequence.
+
+
+
 \begin{figure}
 \centering
 \begin{tikzpicture}[node/.style={draw,circle}]
 \coordinate (origin)  at (0, 0);
 \node[node] at (origin) (entry) {E};
 
-\node[node, right=of entry] (s1e) {1};
-\node[node, right=of s1e] (s11) {1};
-\node[node, right=of s11] (s1f) {1};
+\node[node, right=of entry] (s1e) {s1e};
+\node[node, right=of s1e] (s11) {s11};
+\node[node, right=of s11] (s1f) {s1f};
 
 \node[below=of s1e] (s2e) {};
-\node[node, below=of s11] (s21) {2};
-\draw[->] (s21) to (entry);
+\node[node, below=of s11] (s21) {s21};
 
-\node[node, right=of s21] (s2f) {2};
+\node[node, right=of s21] (s2f) {s2f};
 
-\node[node, below=of entry] (s3e) {2};
-\node[node, below=of s3e] (s31) {1};
+\node[node, below=of entry] (s3e) {s3e};
+\node[node, below=of s3e] (s31) {s31};
 
-\node[node, below=of s31] (s3f) {1};
-\draw[bend right=50, ->] (s21) to node[midway, above] {1} (s31);
+\node[node, below=of s31] (s3f) {s3f};
+
 
 \draw[->] (entry) -- (s1e) node[midway, above] {1};
 \draw[->] (entry) -- (s3e) node[midway, left] {2};
@@ -39,6 +77,7 @@
 \draw[->] (s31) -- (s3f) {} node[midway, left] {1} ;
 \end{tikzpicture}
 \caption{Base}
+\label{fig:base_model}
 \end{figure}
 
 \begin{figure}
@@ -48,40 +87,40 @@
 \node[node] at (origin) (entry) {E};
 \draw[loop, ->] (entry) to node[midway, above] {0} (entry);
 
-\node[node, right=of entry] (s1e) {1};
+\node[node, right=of entry] (s1e) {s1e};
 \draw[bend right=50, ->] (s1e) to node[midway, above] {0} (entry);
 
-\node[node, right=of s1e] (s11) {1};
+\node[node, right=of s1e] (s11) {s11};
 \draw[bend right=65, ->] (s11) to node[midway, above] {0} (entry);
 \coordinate[above=of entry] (b1);
-\draw[bend right=50, ->] (s11) to (b1) to node[midway, left] {2} (s3e);
+\draw[bend left=30, ->] (s11) to node[midway, left] {2} (s21);
 
-\node[node, right=of s11] (s1f) {1};
+\node[node, right=of s11] (s1f) {s1f};
 \draw[out=100, in=90, ->] (s1f) to node[midway, above] {0} (entry);
 \coordinate[above left=of b1] (b2);
-\draw[bend right=60, ->] (s1f) to (b2) to node[midway, left] {2} (s3e);
+\draw[bend left=10, ->] (s1f) to node[midway, above] {2} (s21);
 \draw[loop right, ->] (s1f) to node[midway, right] {1} (s1f);
 
 \node[below=of s1e] (s2e) {};
-\node[node, below=of s11] (s21) {2};
+\node[node, below=of s11] (s21) {s21};
 \draw[bend left=50, ->] (s21) to node[midway, above] {1} (s31);
 \draw[bend left=20, ->] (s21) to node[midway, above] {0} (entry);
 
-\node[node, right=of s21] (s2f) {2};
+\node[node, right=of s21] (s2f) {s2f};
 \draw[bend left=50, ->] (s2f) to node[midway, above] {2} (s3e);
 \draw[bend left=50, ->] (s2f) to node[midway, above] {1} (s31);
 \draw[bend left=50, ->] (s2f) to node[midway, above] {0} (entry);
 
 
-\node[node, below=of entry] (s3e) {2};
+\node[node, below=of entry] (s3e) {s3e};
 \draw[loop right, ->] (s3e) to node[midway, above] {2} (s3e);
 \draw[bend left=50, ->] (s3e) to node[midway, left] {0} (entry);
 
-\node[node, below=of s3e] (s31) {1};
+\node[node, below=of s3e] (s31) {s31};
 \draw[bend left=50, ->] (s31) to node[midway, below] {2} (s21);
 \draw[bend left=50, ->] (s31) to node[midway, left] {0} (entry);
 
-\node[node, below=of s31] (s3f) {1};
+\node[node, below=of s31] (s3f) {s3f};
 \draw[loop right, ->] (s3f) to node[midway, right] {2} (s2f);
 \draw[loop left, ->] (s3f) to node[midway, left] {1} (s2f);
 \draw[loop below=50, ->] (s3f) to node[midway, below] {0} (s2f);
@@ -99,22 +138,38 @@
 \draw[->] (s31) -- (s3f) {} node[midway, left] {1} ;
 \end{tikzpicture}
 \caption{Base}
+\label{fig:full_model}
 \end{figure}
 
+\section{Prolog}
+One method to implement the model 
 
 \section{REGEX}
-% ^(0|1|20|22|212|210)*(111|122)\$
-111
-1112
-1122
-122
-2111
-00121222
-00120122
-001211222
-01201201111
-01201202111
+\^(0|1|20|22|212|210)*(111|122)\$
 
-% \bibliographystyle{plain} % We choose the "plain" reference style
-% \bibliography{refs}
+\section{Tests}
+\subsection{Accepted}
+\begin{itemize}
+    \item 111
+    \item 122
+    \item 1122
+    \item 00120122
+    \item 111111122
+    \item 01201201111
+\end{itemize}
+\subsection{Rejected}
+\begin{itemize}
+    \item 1112
+    \item 211
+    \item 01201202111
+    \item 00121222
+    \item 001211222
+    \item 11112110111
+    \item 2110102001221200122
+\end{itemize}
+
+
+
+\bibliographystyle{plain} % We choose the "plain" reference style
+\bibliography{refs}
 \end{document}
