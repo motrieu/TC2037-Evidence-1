@@ -4,7 +4,12 @@
 \usepackage{cleveref}
 \usepackage{listings}
 
+\title{TC2037 Evidence 1: Implementation of Lexical Analysis}
+\author{Moritz Yulian Trieu: A01831900}
+\date{14/03/2026}
+
 \begin{document}
+\maketitle
 \section{Introduction} \label{sec:intro}
 This evidence looks at finding an automaton to accept a provided language. 
 The resulting automaton can than be either modeled using Prolog or REGEX.
@@ -32,11 +37,11 @@ due to the small size and lower complexity of the language, a deterministic mode
 As \cite{hopcroft2001introduction} explain, a non-deterministic model has to be converted to a deterministic model,
 in order to be implementable. As using a deterministic model was possible, this option was more reasonable.
 
-Each string should start out at the same entry state E. From there one can derive the different conitions path, the automaton needs to recognize.
+Each string should start out at the same entry state E, so $q0=E$. From there one can derive the different conitions path, the automaton needs to recognize.
 In \cref{fig:base_model} the different paths are depicted. The path s1e-s1f shows the accepted ending sequence "111", 
 s1e-s2f models the accepting end string "122" and s3e-s3f show the rejected sequence "211". These are also all the required 
 states, as any other sequence has no influence on acceptance or reejction and can lead back to E. With this F is defined as $F=\{s1f, s2f\}$.
-In \cref{fig:full_model}, the full model is shown with all connections. Important to note is, that each node needs
+In \cref{fig:full_model}, the full model is shown with all connections. \Cref{fig:full_model} directly implies Q and $\delta$. Important to note is, that each node needs
 to model each possible alphabet transition. Interesting observations include, that each 0
 loops back to node E as 0 is no part of any important sequence, that once s3f is reached, all further transitions loop back to itself. 
 Once this node has been reached, the string cannot be accepted. Further interesting to observer are the
@@ -46,18 +51,18 @@ transitions between different branches, as each subsequence in a branch can pote
 
 \begin{figure}
 \centering
-\begin{tikzpicture}[node/.style={draw,circle}]
+\begin{tikzpicture}[node/.style={draw,circle}, endnode/.style={draw, double=white, circle}]
 \coordinate (origin)  at (0, 0);
 \node[node] at (origin) (entry) {E};
 
 \node[node, right=of entry] (s1e) {s1e};
 \node[node, right=of s1e] (s11) {s11};
-\node[node, right=of s11] (s1f) {s1f};
+\node[endnode, right=of s11] (s1f) {s1f};
 
 \node[below=of s1e] (s2e) {};
 \node[node, below=of s11] (s21) {s21};
 
-\node[node, right=of s21] (s2f) {s2f};
+\node[endnode, right=of s21] (s2f) {s2f};
 
 \node[node, below=of entry] (s3e) {s3e};
 \node[node, below=of s3e] (s31) {s31};
@@ -77,13 +82,13 @@ transitions between different branches, as each subsequence in a branch can pote
 \draw[->] (s3e) -- (s31) {} node[midway, left] {1};
 \draw[->] (s31) -- (s3f) {} node[midway, left] {1} ;
 \end{tikzpicture}
-\caption{Base}
+\caption{Depiction of the base sequence relevant for parsing any string. Note, that the accepted states can already be identified in this graph, s1f and s2f.}
 \label{fig:base_model}
 \end{figure}
 
-\begin{figure}
+\begin{figure}[h!]
 \centering
-\begin{tikzpicture}[node/.style={draw,circle}]
+\begin{tikzpicture}[node/.style={draw,circle}, endnode/.style={draw, double=white, circle}]
 \coordinate (origin)  at (0, 0);
 \node[node] at (origin) (entry) {E};
 \draw[loop, ->] (entry) to node[midway, above] {0} (entry);
@@ -96,7 +101,7 @@ transitions between different branches, as each subsequence in a branch can pote
 \coordinate[above=of entry] (b1);
 \draw[bend left=30, ->] (s11) to node[midway, left] {2} (s21);
 
-\node[node, right=of s11] (s1f) {s1f};
+\node[endnode, right=of s11] (s1f) {s1f};
 \draw[out=100, in=90, ->] (s1f) to node[midway, above] {0} (entry);
 \coordinate[above left=of b1] (b2);
 \draw[bend left=10, ->] (s1f) to node[midway, above] {2} (s21);
@@ -107,7 +112,7 @@ transitions between different branches, as each subsequence in a branch can pote
 \draw[bend left=50, ->] (s21) to node[midway, above] {1} (s31);
 \draw[bend left=20, ->] (s21) to node[midway, above] {0} (entry);
 
-\node[node, right=of s21] (s2f) {s2f};
+\node[endnode, right=of s21] (s2f) {s2f};
 \draw[bend left=50, ->] (s2f) to node[midway, above] {2} (s3e);
 \draw[bend left=50, ->] (s2f) to node[midway, above] {1} (s31);
 \draw[bend left=50, ->] (s2f) to node[midway, above] {0} (entry);
@@ -138,7 +143,7 @@ transitions between different branches, as each subsequence in a branch can pote
 \draw[->] (s3e) -- (s31) {} node[midway, left] {1};
 \draw[->] (s31) -- (s3f) {} node[midway, left] {1} ;
 \end{tikzpicture}
-\caption{Base}
+\caption{Depiction of the full automaton. Note that once s3f is reached, no possibility of reaching any other state exists. Further, any "0" resets any sequence and it is possible to switch between branches if the current branch could be a subsequence of another branch. }
 \label{fig:full_model}
 \end{figure}
 
@@ -264,10 +269,16 @@ While the tests don't enumerte every single possible case, they test every switc
 These tests and parts of tests can be used to construct any other string.
 
 \section{Comparison and Learnings}
+Both methods can be used to solve the task of lexical analysis. 
+But both trade interpretability for implementation complexity.
+Using Prolog and deterministic finite automatons leads to easy interpretability by humans,
+as describing the process in a graph allows for easy understanding. But this methods becomes very
+inconvenient for increasingly complex cases, as more connections have to be drawn and denoted as the alphabet
+or speciifcations increase. Here, REGEX is more scalable, enableing the notation
+of very complex cases in a single line of algebraic description. But this comes at the cost
+of interpretability, as those description become hard to read and understand the more complex they get,
+giving more space for implementation error.
 
-
-
-
-\bibliographystyle{plain} % We choose the "plain" reference style
+\bibliographystyle{apalike}
 \bibliography{refs}
 \end{document}
