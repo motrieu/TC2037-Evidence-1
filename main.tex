@@ -2,6 +2,7 @@
 \usepackage{tikz}
 \usetikzlibrary{shapes.geometric,positioning}
 \usepackage{cleveref}
+\usepackage{listings}
 
 \begin{document}
 \section{Introduction} \label{sec:intro}
@@ -142,23 +143,114 @@ transitions between different branches, as each subsequence in a branch can pote
 \end{figure}
 
 \section{Prolog}
-One method to implement the model 
+One method to implement the model is using Prolog. Due to the nature of prolog,
+the model can be easily implemented using the visual representation.
+It is only necessary to define the transitions and acceptance states:
+\begin{lstlisting}
+move(e, e, 0).
+move(e, s1e, 1).
+move(e, s3e, 2).
+
+move(s1e, e , 0).
+move(s1e, s11 , 1).
+move(s1e, s21 , 2).
+
+move(s11, e , 0).
+move(s11, s1f , 1).
+move(s11, s21 , 2).
+
+move(s1f, e , 0).
+move(s1f, s1f , 1).
+move(s1f, s21 , 2).
+
+move(s21, e , 0).
+move(s21, s31 , 1).
+move(s21, s2f , 2).
+
+move(s2f, e , 0).
+move(s2f, s31 , 1).
+move(s2f, s3e , 2).
+
+move(s3e, e , 0).
+move(s3e, s31 , 1).
+move(s3e, s2e , 2).
+
+move(s31, e , 0).
+move(s31, s3f , 1).
+move(s31, s21 , 2).
+
+move(s3f, s3f , 0).
+move(s3f, s3f , 1).
+move(s3f, s3f , 2).
+
+accepting_state(s1f).
+accepting_state(s2f).
+\end{lstlisting}
+
+The parser provieded in the lecture is used to parse the string letter by letter.
+\begin{lstlisting}
+parseDFA(InputList) :-
+    parseDFAHelper(InputList, e).
+parseDFAHelper([], CurrentState) :-
+    accepting_state(CurrentState),
+    write('Accepted'), nl;
+    write('Rejected'), nl.
+parseDFAHelper([Symbol|Rest], CurrentState) :-
+    move(CurrentState, NextState, Symbol),
+    parseDFAHelper(Rest, NextState).
+\end{lstlisting}
+The helper function separates out each symbol and uses the symbol to match a
+$move$ clause definition to obtain the new state.
+The full script, including the test cases can be found in "dfa.pl".
+
+If given a string of length $n$, the tail recursion algorithm looks at every symbol only once.
+Therefore, the algorithm is in $O(n)$.
 
 \section{REGEX}
-\^(0|1|20|22|212|210)*(111|122)\$
+"REGEX", short for "regular expression" is according to \cite{hopcroft2001introduction} an algebraic description of languages.
+They further proof that any language that can be represented using a deterministic finite automaton, can also be represented using 
+regular expressions. Designing a regular expression is different than designing an automaton.
+Instead of thinking in individual states, one starts out by breaking the language down into individual patterns
+and strings them together. In this example we can start out with the easiest condition:
+The string has to and in either "111" or "122". In regex this can be denoted as 
+\begin{lstlisting}
+    (111|122)$
+\end{lstlisting}
+Here the "\$" enforces the string to end in the prior pattern.
+Before this pattern, any pattern that doesn not contain "211" can be used.
+This case can be broken down into 6 different patterns that can be repeated infinetly to build any valid pattern using $*$. 
+Combined with the previous pattern and the addition of a special case, the regular expression results in:
+\begin{lstlisting}
+^(0|1|20|22|212|210)*(2122|111|122)$.
+\end{lstlisting}
+Note the special ending sequence "2122". As the first part can have any number of 1s and the sequence can end in "111",
+adding a single "2" in the first part, would allow for the acceptance of invalid patterns. The only case 
+where "21" would not raise a potential concern is when the string ends in "122". Thus the ending sequence "2122" has to be matched separatly. 
+The forces the beginning of string to also start with any of those patterns,
+forcing REGEX to consider the entire string for matching and not mearly parts.
+
 
 \section{Tests}
+To test both implementations, test have been derived to test various cases.
+The cases have been divided into two catergories: String that should be accepted and string that should be rejected.
 \subsection{Accepted}
-\begin{itemize}
+Here the cases 1. and 2. validate the base cases, where only the ending sequence occurs. 
+Cases 3., 4. and 6. test more complex cases, with longer strings. Cases 5. and 7. are specifically
+designed to test switching inbetween sequences, for example in 5., although the ending sequence "111" fullym appears, 
+the actual ending sequence "122" has to be identified. 
+\begin{enumerate}
     \item 111
     \item 122
     \item 1122
     \item 00120122
     \item 111111122
     \item 01201201111
-\end{itemize}
+    \item 112122
+\end{enumerate}
 \subsection{Rejected}
-\begin{itemize}
+The rejection cases test either the end sequence such as cases 1. and 4. or the occurence of "211" which is tested in all other cases.
+Case 3. shows an interesting problem for REGEX, as the sequence "2122" needs to be accepted, but the sequence "2111" needs to be rejected.
+\begin{enumerate}
     \item 1112
     \item 211
     \item 01201202111
@@ -166,7 +258,13 @@ One method to implement the model
     \item 001211222
     \item 11112110111
     \item 2110102001221200122
-\end{itemize}
+\end{enumerate}
+
+While the tests don't enumerte every single possible case, they test every switch of sequence/ branch and some combinations of those.
+These tests and parts of tests can be used to construct any other string.
+
+\section{Comparison and Learnings}
+
 
 
 
