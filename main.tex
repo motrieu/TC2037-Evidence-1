@@ -11,8 +11,8 @@
 \begin{document}
 \maketitle
 \section{Introduction} \label{sec:intro}
-This evidence looks at finding an automaton to accept a provided language. 
-The resulting automaton can than be either modeled using Prolog or REGEX.
+This evidence looks at finding a finite automaton to accept a provided regular language as also described in \cite{stakano_formal_languages}. 
+The resulting automaton can then be either modeled using Prolog or REGEX as for example done in \cite{g4g-desfiniteautomaton}.
 The language chosen for this evidence posesses the alphabet $\Sigma = \{0, 1, 2\}$, needs to end in either "111" or "122" to 
 transition into an accepting state and prohibits the occurence of "211".
 \section{Automaton} 
@@ -28,24 +28,45 @@ quintuple $A= (Q, \Sigma, \delta, q0, F)$ where
     \item q0 the inital state and
     \item F the accepting states.
 \end{itemize}
+As indicated in \cite{stakano_formal_languages}, an automaton of this kind parses a string by transitioning to different states of the automaton 
+according to the transition function given the characters of the input string. In \cref{fig:example_automaton} a basic example of passing a binary string is given.
 An input gets accepted if, after passing the string, it ends up in an accepting
-state, otherwise it is rejected. The alphabet $\Sigma$ is the same as mentioned in \cref{sec:intro} and
-the other elements are yet to be determined.
+state, otherwise it is rejected.
 
-While \cite{hopcroft2001introduction} also mention the existence of non-deterministic finite automaton,
-due to the small size and lower complexity of the language, a deterministic model approach was chosen.
-As \cite{hopcroft2001introduction} explain, a non-deterministic model has to be converted to a deterministic model,
-in order to be implementable. As using a deterministic model was possible, this option was more reasonable.
+\begin{figure}
+\centering
+\begin{tikzpicture}[node/.style={draw,circle}, endnode/.style={draw, double=white, circle}]
+\coordinate (origin)  at (0, 0);
+\node[node] at (origin) (q0) {q0};
+\node[endnode, right=of q0] (s1) {s1};
 
+\draw[bend left=20,, ->] (q0) to node[midway, above] {1} (s1);
+\draw[bend left=20,, ->] (s1) to node[midway, below] {0} (q0);
+\draw[loop, ->] (q0) to node[midway, above] {0} (entry);
+\draw[loop, ->] (s1) to node[midway, above] {1} (entry);
+
+
+\end{tikzpicture}
+\caption{In this very basic example, $\Sigma = \{0, 1\}$ where a string has to end in "1". 
+If given a string "1001", each character of the string will be consumed and will transition the automaton
+in a new state according to the edge labels. Since the last digit is "1", the automaton will and up in a 
+accepting state.}
+\label{fig:example_automaton}
+\end{figure}
+
+In \cite{hopcroft2001introduction} the existence of non-deterministic finite automaton is mentioned, But as further explained, a non-deterministic model has to be converted to a deterministic model,
+in order to be implementable.
+Due to the small size and lower complexity of the language mentioned in \cref{sec:intro}, a deterministic model approach was possible and therefore chosen,
+to reduce complexity.
+
+\subsection{Modeling the language}
 Each string should start out at the same entry state E, so $q0=E$. From there one can derive the different conitions path, the automaton needs to recognize.
-In \cref{fig:base_model} the different paths are depicted. The path s1e-s1f shows the accepted ending sequence "111", 
-s1e-s2f models the accepting end string "122" and s3e-s3f show the rejected sequence "211". These are also all the required 
-states, as any other sequence has no influence on acceptance or reejction and can lead back to E. With this F is defined as $F=\{s1f, s2f\}$.
-In \cref{fig:full_model}, the full model is shown with all connections. \Cref{fig:full_model} directly implies Q and $\delta$. Important to note is, that each node needs
-to model each possible alphabet transition. Interesting observations include, that each 0
-loops back to node E as 0 is no part of any important sequence, that once s3f is reached, all further transitions loop back to itself. 
-Once this node has been reached, the string cannot be accepted. Further interesting to observer are the
-transitions between different branches, as each subsequence in a branch can potentially be the starting point of a different sequence.
+In \cref{fig:base_model} a first model is depicted that encodes all paths that are important for acceptance and rejection and therefore also determines all required states. The path s1e-s1f shows the accepted ending sequence "111", 
+s1e-s2f models the accepting end string "122" and s3e-s3f show the rejected sequence "211". With this F is defined as $F=\{s1f, s2f\}$. This graph is incomplete, as each sate needs to have a transition for each symbol in the alphabet. 
+In \cref{fig:full_model}, the full model is shown with all connections. \Cref{fig:full_model} further implies Q and $\delta$. Important to observe is, that each occurence of "0"
+loops back to node E as "0" is no part of a "determining" sequence and that once s3f is reached, all further transitions loop back to the same state. 
+This is because once this node has been reached, the string cannot be accepted, as the only way to reach this node is through the sequence "211". Also important are the
+transitions between different branches, as each subsequence in a branch can potentially be the starting point of a different "determining" sequence.
 
 
 
@@ -192,7 +213,7 @@ accepting_state(s1f).
 accepting_state(s2f).
 \end{lstlisting}
 
-The parser provieded in the lecture is used to parse the string letter by letter.
+The parser provieded in the lecture is used to parse the string recursively letter by letter.
 \begin{lstlisting}
 parseDFA(InputList) :-
     parseDFAHelper(InputList, e).
@@ -216,7 +237,7 @@ Therefore, the algorithm is in $O(n)$.
 They further proof that any language that can be represented using a deterministic finite automaton, can also be represented using 
 regular expressions. Designing a regular expression is different than designing an automaton.
 Instead of thinking in individual states, one starts out by breaking the language down into individual patterns
-and strings them together. In this example we can start out with the easiest condition:
+to then string them together. In this case we can start out with the easiest condition:
 The string has to and in either "111" or "122". In regex this can be denoted as 
 \begin{lstlisting}
     (111|122)$
@@ -231,17 +252,17 @@ Combined with the previous pattern and the addition of a special case, the regul
 Note the special ending sequence "2122". As the first part can have any number of 1s and the sequence can end in "111",
 adding a single "2" in the first part, would allow for the acceptance of invalid patterns. The only case 
 where "21" would not raise a potential concern is when the string ends in "122". Thus the ending sequence "2122" has to be matched separatly. 
-The forces the beginning of string to also start with any of those patterns,
-forcing REGEX to consider the entire string for matching and not mearly parts.
+The "\string^"-symbol forces the beginning of string to also start with any of those patterns,
+forcing REGEX to consider the entire string for matching and not just parts.
 
 
 \section{Tests}
-To test both implementations, test have been derived to test various cases.
-The cases have been divided into two catergories: String that should be accepted and string that should be rejected.
+To test both implementations, test cases have been derived to test various situations.
+The cases have been divided into two catergories: Strings that should be accepted and string that should be rejected.
 \subsection{Accepted}
 Here the cases 1. and 2. validate the base cases, where only the ending sequence occurs. 
 Cases 3., 4. and 6. test more complex cases, with longer strings. Cases 5. and 7. are specifically
-designed to test switching inbetween sequences, for example in 5., although the ending sequence "111" fullym appears, 
+designed to test switching inbetween sequences, for example in 5., although the ending sequence "111" fully appears, 
 the actual ending sequence "122" has to be identified. 
 \begin{enumerate}
     \item 111
@@ -274,7 +295,7 @@ But both trade interpretability for implementation complexity.
 Using Prolog and deterministic finite automatons leads to easy interpretability by humans,
 as describing the process in a graph allows for easy understanding. But this methods becomes very
 inconvenient for increasingly complex cases, as more connections have to be drawn and denoted as the alphabet
-or speciifcations increase. Here, REGEX is more scalable, enableing the notation
+or specifications increase. Here, REGEX is more scalable, enabeling the notation
 of very complex cases in a single line of algebraic description. But this comes at the cost
 of interpretability, as those description become hard to read and understand the more complex they get,
 giving more space for implementation error.
